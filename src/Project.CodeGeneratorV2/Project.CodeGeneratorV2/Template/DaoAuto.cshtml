@@ -1,0 +1,228 @@
+﻿@using System.Collections
+@using System.Collections.Generic
+@using System.Linq
+@using System.Text
+@using Project.CodeGeneratorV2.DBSchema
+@using RazorEngine.Text
+@{
+    Table table = (Table)Model;
+    string tableName = table.TableName;
+    string columnNames = table.ColumnNames;
+    string modelClassName = tableName;
+    string classnameVal = ViewBag.classnameVal;
+    string namespaceVal = ViewBag.namespaceVal;
+    string modelNamespaceVal = ViewBag.modelNamespaceVal;
+    string dbNameVal = ViewBag.dbNameVal;
+}
+<h1>
+    using System;
+    using System.Collections.Generic;
+    using System.Text;
+    using DapperExt;
+    using @modelNamespaceVal;
+
+    namespace @namespaceVal
+    {
+    public class @classnameVal
+    {
+    private readonly DbHelperSql _dbHelper;
+    public @classnameVal ()
+    {
+    _dbHelper = SqlMapper.Instance.GetDbHelperSql(EnumDbName.@dbNameVal);
+    }
+    //
+    @{
+        string FunAdd_Columns = "";
+        string FunAdd_Params = "";
+        foreach (Column c in table.Columns)
+        {
+            if (c.IsPK || c.IsTimestamp)
+            {
+                continue;
+            }
+            FunAdd_Columns += c.ColumnName + ",";
+            FunAdd_Params += "@" + c.ColumnName + ",";
+        }
+        FunAdd_Columns = FunAdd_Columns.TrimEnd(',');
+        FunAdd_Params = FunAdd_Params.TrimEnd(',');
+    }
+    public int Add(@modelClassName model)
+    {
+    StringBuilder strSql = new StringBuilder();
+    strSql.Append("insert into @tableName ( ");
+    strSql.Append("@FunAdd_Columns)");
+    strSql.Append(" values (");
+    strSql.Append("@FunAdd_Params)");
+    //
+    var id= _dbHelper.InsertReturnId(strSql.ToString(), model);
+    return id;
+    }
+    //
+    @{
+        string FunDeleteById_Where = "";
+        string FunDeleteById_ParamsFun = "";
+        string FunDeleteById_ParamsModel = "";
+        for (int i = 0; i < table.PKs.Count; i++)
+        {
+            Column c = table.PKs[i];
+            string name = c.ColumnName;
+            string lowerName = c.LowerColumnName;
+            string upName = c.UpColumnName;
+            string typeName = c.TypeName;
+            if (i == 0)
+            {
+                FunDeleteById_Where += string.Format(" {0}=@{1} ", name, lowerName);
+                FunDeleteById_ParamsFun += string.Format(" {0} {1} ", typeName, lowerName);
+                FunDeleteById_ParamsModel += string.Format(" {0}={1} ", upName, lowerName);
+                continue;
+            }
+            FunDeleteById_Where += string.Format(" and {0}=@{1} ", name, lowerName);
+            FunDeleteById_ParamsFun += string.Format(" ,{0} {1} ", typeName, lowerName);
+            FunDeleteById_ParamsModel += string.Format(" , {0}={1} ", upName, lowerName);
+        }
+    }
+    public bool DeleteById(@FunDeleteById_ParamsFun)
+    {
+    StringBuilder strSql = new StringBuilder();
+    strSql.Append("delete from @tableName ");
+    strSql.Append("where @FunDeleteById_Where ");
+    //
+    var flag= _dbHelper.Delete(strSql.ToString(), new @modelClassName { @FunDeleteById_ParamsModel });
+    return flag;
+    }
+    //
+    @{
+        string FunUpdateById_Where = "";
+        string FunUpdateById_ParamsFun = "";
+        for (int i = 0; i < table.PKs.Count; i++)
+        {
+            Column c = table.PKs[i];
+            string name = c.ColumnName;
+            string lowerName = c.LowerColumnName;
+            string upName = c.UpColumnName;
+            string typeName = c.TypeName;
+            if (i == 0)
+            {
+                FunUpdateById_Where += string.Format(" {0}=@{1} ", name, lowerName);
+                FunUpdateById_ParamsFun += string.Format(" {0} {1} ", typeName, lowerName);
+                continue;
+            }
+            FunDeleteById_ParamsFun += string.Format(" ,{0} {1} ", typeName, lowerName);
+            FunUpdateById_Where += string.Format(" and {0}=@{1} ", name, lowerName);
+        }
+    }
+    public bool UpdateById(@modelClassName model, @FunUpdateById_ParamsFun)
+    {
+    @{
+        for (int i = 0; i < table.PKs.Count; i++)
+        {
+            Column c = table.PKs[i];
+            string lowerName = c.LowerColumnName;
+            string upName = c.UpColumnName;
+            <h2>
+                model.@upName = @lowerName;
+            </h2>
+        }
+    }
+    StringBuilder strSql = new StringBuilder();
+    strSql.Append("update @tableName set ");
+    @{
+        int FunUpdateById_Count = table.Columns.Count;
+        for (int i = 0; i < table.Columns.Count; i++)
+        {
+            Column c = table.Columns[i];
+            string name = c.ColumnName;
+            string lowerName = c.LowerColumnName;
+            string upName = "@" + c.UpColumnName;
+            if (c.IsPK || c.IsTimestamp)
+            {
+                continue;
+            }
+            <h2>
+                if(model.@upName!=null)
+                strSql.Append("@name=@upName,");
+            </h2>
+        }
+    }
+    int n = strSql.ToString().LastIndexOf(",", StringComparison.Ordinal);
+    if(n>0)strSql.Remove(n, 1);
+    strSql.Append(" where @FunUpdateById_Where ");
+    var flag = _dbHelper.Update(strSql.ToString(), model);
+    return flag;
+    }
+    //
+    @{
+        string FunFindById_Where = "";
+        string FunFindById_ParamsFun = "";
+        string FunFindById_ParamsModel = "";
+        for (int i = 0; i < table.PKs.Count; i++)
+        {
+            Column c = table.PKs[i];
+            string name = c.ColumnName;
+            string lowerName = c.LowerColumnName;
+            string upName = c.UpColumnName;
+            string typeName = c.TypeName;
+            if (i == 0)
+            {
+                FunFindById_Where += string.Format(" {0}=@{1} ", name, lowerName);
+                FunFindById_ParamsFun += string.Format(" {0} {1} ", typeName, lowerName);
+                FunFindById_ParamsModel += string.Format(" {0}={1} ", upName, lowerName);
+                continue;
+            }
+            FunFindById_Where += string.Format(" and {0}=@{1} ", name, lowerName);
+            FunFindById_ParamsFun += string.Format(" ,{0} {1} ", typeName, lowerName);
+            FunFindById_ParamsModel += string.Format(" , {0}={1} ", upName, lowerName);
+        }
+    }
+    public @modelClassName FindById(@FunFindById_ParamsFun)
+    {
+    //默认top 1--1条记录
+    StringBuilder strSql = new StringBuilder();
+    strSql.Append("select  ");
+    strSql.Append("@columnNames  ");
+    strSql.Append("from @tableName ");
+    strSql.Append("where @FunFindById_Where ");
+    strSql.Append("limit 1  ");
+    //
+    var result = _dbHelper.Find(strSql.ToString(), new @modelClassName { @FunFindById_ParamsModel });
+    return result;
+    }
+    //
+    public IList<@modelClassName>FindList(@modelClassName whereModel, string where, int top)
+        {
+        StringBuilder strSql = new StringBuilder();
+        strSql.Append("select ");
+        strSql.Append("@columnNames  ");
+        strSql.Append("from @tableName ");
+        strSql.AppendFormat("where 1=1 and {0} ", where);
+        strSql.AppendFormat("limit {0}  ", top);
+        var result = _dbHelper.FindList<@modelClassName>(strSql.ToString(), whereModel);
+    return result;
+    }
+    //
+    public IList<@modelClassName> FindListByPage(@modelClassName whereModel, string where, string orderBy, int pageIndex, int pageSize)
+        {
+        var startIndex = pageIndex * pageSize;
+        var size = pageSize;
+        StringBuilder strSql = new StringBuilder();
+        strSql.Append("select ");
+        strSql.Append("@columnNames ");
+        strSql.Append("from @tableName ");
+        strSql.AppendFormat("where 1=1 and {0} ", where);
+        strSql.AppendFormat("ORDER BY {0} LIMIT {1} , {2} ", orderBy, startIndex, size);
+        var result = _dbHelper.FindList<@modelClassName>(strSql.ToString(), whereModel);
+        return result;
+    }
+    //
+    public int Count(@modelClassName whereModel, string where)
+    {
+    StringBuilder strSql = new StringBuilder();
+    strSql.Append("select  count(*) from @tableName ");
+    strSql.AppendFormat("where 1=1 and {0} ", where);
+    var result = _dbHelper.Count(strSql.ToString(), whereModel);
+    return result;
+    }
+    //
+    }
+    }
+</h1>
