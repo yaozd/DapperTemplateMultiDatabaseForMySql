@@ -4,5 +4,7 @@
     {
         Model = 1,
         Dao = 2,
+        ViewModel = 3,
+        ViewHelper = 4
     }
 }

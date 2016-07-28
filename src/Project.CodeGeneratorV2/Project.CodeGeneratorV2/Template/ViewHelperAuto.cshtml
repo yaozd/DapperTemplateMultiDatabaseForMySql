@@ -1,0 +1,46 @@
+﻿@using System.Linq
+@using Project.CodeGeneratorV2.DBSchema
+@using RazorEngine.Text
+@{
+    Table table = (Table)Model;
+    string classnameVal = ViewBag.classnameVal;
+    string namespaceVal = ViewBag.namespaceVal;
+    string viewHelperName = classnameVal + "ViewHelper";
+    string viewModelName = classnameVal + "ViewModel";
+}
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace @namespaceVal
+{
+	public partial class @viewHelperName 
+    {
+    #region ToModel
+     public static @classnameVal ToModel(@viewModelName viewModel)
+    {
+        var model=new @classnameVal ();
+        @foreach (Column c in table.Columns)
+        {
+        <h1>model.@c.UpColumnName = viewModel.@c.UpColumnName;
+        </h1>
+        }      
+        return model;
+    }
+    #endregion
+    #region ToView
+    public static @viewModelName ToViewModel(@classnameVal model)
+    {
+        var viewModel=new @viewModelName ();
+        @foreach (Column c in table.Columns)
+        {
+            <h1>viewModel.@c.UpColumnName = model.@c.UpColumnName;
+            </h1>
+        }
+        return viewModel;
+    }
+    #endregion
+    }
+}
+
+

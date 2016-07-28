@@ -1,0 +1,31 @@
+﻿@using System.Linq
+@using Project.CodeGeneratorV2.DBSchema
+@using RazorEngine.Text
+@{
+    Table table = (Table)Model;
+    string classnameVal = ViewBag.classnameVal+ "ViewModel";
+    string namespaceVal = ViewBag.namespaceVal;
+}
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace @namespaceVal
+{
+    [Serializable]
+	public partial class @classnameVal 
+    {
+    #region Attributes
+    @foreach (Column c in table.Columns)
+    {
+        string isNullable = c.TypeName== "String"|| c.TypeName == "Byte[]"||c.IsPK||c.IsTimestamp?"":"?";
+        string isPK = c.IsPK ? "(PK)" : "";
+        <h1>
+            public @c.TypeName@isNullable @c.UpColumnName{ get;set;}
+        </h1>
+    }
+    #endregion
+    }
+ }
+
+

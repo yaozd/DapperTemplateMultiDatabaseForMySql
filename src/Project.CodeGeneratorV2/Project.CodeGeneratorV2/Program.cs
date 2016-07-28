@@ -18,15 +18,27 @@ namespace Project.CodeGeneratorV2
             //生成Model================================================
             var templateFileName = "ModelAuto";
             var savePath = @"D:\._1\MYSQL\Template.Model";
-            var modelNamespaceVal = "Template.Model";
+            var modelNamespaceVal = "XS.Insure.ShortUrl.Model";
             GenerateTemplate_Model(templateFileName, tableList, dbSchema, modelNamespaceVal, savePath);
             //return;
             //生成Dao================================================
             templateFileName = "DaoAuto";
             savePath = @"D:\._1\MYSQL\Template.Dao";
-            var daoNamespaceVal = "Template.Dao";
+            var daoNamespaceVal = "XS.Insure.ShortUrl.Dao";
             var dbNameVal = "Test1";//EnumDbName中数据库的名称
-            GenerateTemplate_Dao(templateFileName, tableList, dbSchema, daoNamespaceVal, modelNamespaceVal,dbNameVal, savePath);
+            GenerateTemplate_Dao(templateFileName, tableList, dbSchema, daoNamespaceVal, modelNamespaceVal, dbNameVal, savePath);
+            //生成ViewModel================================================
+            templateFileName = "ViewModelAuto";
+            savePath = @"D:\._1\MYSQL\Template.ViewModel";
+            modelNamespaceVal = "XS.Insure.ShortUrl.Model";
+            GenerateTemplate_ViewModel(templateFileName, tableList, dbSchema, modelNamespaceVal, savePath);
+            //return;
+            //生成ViewModel================================================
+            templateFileName = "ViewHelperAuto";
+            savePath = @"D:\._1\MYSQL\Template.ViewHelper";
+            modelNamespaceVal = "XS.Insure.ShortUrl.Model";
+            GenerateTemplate_ViewHelper(templateFileName, tableList, dbSchema, modelNamespaceVal, savePath);
+            //return;
             return;
             //生成Service================================================
             //templateFileName = "ModelAuto";
@@ -53,7 +65,7 @@ namespace Project.CodeGeneratorV2
                 FileHelper.Save(string.Format(@"{0}\{1}.cs", savePath, viewbag.classnameVal), outputText);
             }
         }
-        private static void GenerateTemplate_Dao(string templateFileName, List<string> tableList, IDBSchema dbSchema, string daoNamespaceVal, string modelNamespaceVal,string dbNameVal, string savePath)
+        private static void GenerateTemplate_Dao(string templateFileName, List<string> tableList, IDBSchema dbSchema, string daoNamespaceVal, string modelNamespaceVal, string dbNameVal, string savePath)
         {
             DisplayTemplateName(templateFileName);
             var templateText = TemplateHelper.ReadTemplate(templateFileName);
@@ -73,7 +85,40 @@ namespace Project.CodeGeneratorV2
                 FileHelper.Save(string.Format(@"{0}\{1}.cs", savePath, viewbag.classnameVal), outputText);
             }
         }
-
+        private static void GenerateTemplate_ViewModel(string templateFileName, List<string> tableList, IDBSchema dbSchema, string modelNamespaceVal, string savePath)
+        {
+            DisplayTemplateName(templateFileName);
+            var templateText = TemplateHelper.ReadTemplate(templateFileName);
+            foreach (var tableName in tableList)
+            {
+                var table = dbSchema.GetTableMetadata(tableName);
+                if (table.PKs.Count == 0) throw new Exception(string.Format("表{0}:没有设置主键！", tableName));
+                Display(tableName, table);
+                dynamic viewbag = new DynamicViewBag();
+                viewbag.classnameVal = tableName;
+                viewbag.namespaceVal = modelNamespaceVal;
+                var outputText = TemplateHelper.Parse(TemplateKey.ViewModel, templateText, table, viewbag);
+                outputText = TemplateHelper.Clean(outputText, RegexPub.H1());
+                FileHelper.Save(string.Format(@"{0}\{1}ViewModel.cs", savePath, viewbag.classnameVal), outputText);
+            }
+        }
+        private static void GenerateTemplate_ViewHelper(string templateFileName, List<string> tableList, IDBSchema dbSchema, string modelNamespaceVal, string savePath)
+        {
+            DisplayTemplateName(templateFileName);
+            var templateText = TemplateHelper.ReadTemplate(templateFileName);
+            foreach (var tableName in tableList)
+            {
+                var table = dbSchema.GetTableMetadata(tableName);
+                if (table.PKs.Count == 0) throw new Exception(string.Format("表{0}:没有设置主键！", tableName));
+                Display(tableName, table);
+                dynamic viewbag = new DynamicViewBag();
+                viewbag.classnameVal = tableName;
+                viewbag.namespaceVal = modelNamespaceVal;
+                var outputText = TemplateHelper.Parse(TemplateKey.ViewHelper, templateText, table, viewbag);
+                outputText = TemplateHelper.Clean(outputText, RegexPub.H1());
+                FileHelper.Save(string.Format(@"{0}\{1}ViewHelper.cs", savePath, viewbag.classnameVal), outputText);
+            }
+        }
         private static void Pause()
         {
             Console.ReadKey();
